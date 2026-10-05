@@ -81,3 +81,41 @@ test('shows the complete analytical result', async ({ page }) => {
     6,
   );
 });
+
+test('the in-app tour demonstrates how an assumption changes an allocation', async ({
+  page,
+}) => {
+  await page.goto('/');
+
+  const guide = page.getByRole('region', { name: 'Follow the next best dollar.' });
+  await expect(guide).toBeVisible();
+
+  const baseline = await allocationDollars(page, 'commonfield');
+  const commonFieldWeight = page.getByRole('slider', {
+    name: 'Common Field evaluator weight',
+  });
+  await expect(async () => {
+    if ((await commonFieldWeight.getAttribute('aria-valuenow')) !== '1.6') {
+      await guide.getByRole('button', { name: 'Try the example' }).click();
+    }
+    await expect(commonFieldWeight).toHaveAttribute('aria-valuenow', '1.6', {
+      timeout: 500,
+    });
+  }).toPass({ timeout: 5_000 });
+
+  await expect(page.getByText('1.6×')).toBeVisible();
+  await expect
+    .poll(() => allocationDollars(page, 'commonfield'))
+    .toBeGreaterThan(baseline);
+
+  await page.getByRole('button', { name: 'Hide guide' }).click();
+  await expect(guide).toBeHidden();
+  await page.getByRole('button', { name: 'How to use' }).click();
+  await expect(guide).toBeVisible();
+
+  await guide.getByRole('button', { name: 'Restore baseline' }).click();
+  await expect.poll(() => allocationDollars(page, 'commonfield')).toBeCloseTo(
+    baseline,
+    6,
+  );
+});

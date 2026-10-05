@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { RotateCcw, Sigma, Sparkles } from 'lucide-react';
+import { BookOpenCheck, RotateCcw, Sigma, Sparkles } from 'lucide-react';
 
 import { optimizeAllocation } from '@/allocation/optimize';
 import { AllocationResults } from '@/components/explorer/allocation-results';
@@ -14,6 +14,7 @@ import {
   type OrganizationViewModel,
 } from '@/components/explorer/scenario';
 import { UtilityChart } from '@/components/explorer/utility-chart';
+import { TutorialPanel } from '@/components/explorer/tutorial-panel';
 import { Button } from '@/components/ui/button';
 
 const BASELINE_RESULT = optimizeAllocation(DEFAULT_ORGANIZATIONS, BUDGET);
@@ -29,6 +30,7 @@ function freshDefaults(): OrganizationViewModel[] {
 
 export function MiniSProcessExplorer() {
   const [organizations, setOrganizations] = useState(freshDefaults);
+  const [showTutorial, setShowTutorial] = useState(true);
   const result = useMemo(
     () => optimizeAllocation(organizations, BUDGET),
     [organizations],
@@ -38,6 +40,20 @@ export function MiniSProcessExplorer() {
     setOrganizations((current) =>
       current.map((organization) =>
         organization.id === id ? { ...organization, [field]: value } : organization,
+      ),
+    );
+  }
+
+  function resetOrganizations() {
+    setOrganizations(freshDefaults());
+  }
+
+  function runTutorialExample() {
+    setOrganizations(
+      freshDefaults().map((organization) =>
+        organization.id === 'commonfield'
+          ? { ...organization, weight: 1.6 }
+          : organization,
       ),
     );
   }
@@ -71,16 +87,30 @@ export function MiniSProcessExplorer() {
             </div>
             <Button
               variant="outline"
+              aria-expanded={showTutorial}
+              aria-controls="tutorial-guide"
+              onClick={() => setShowTutorial((current) => !current)}
+              className="h-11 rounded-xl bg-white/70 px-3"
+            >
+              <BookOpenCheck aria-hidden="true" data-icon="inline-start" />
+              {showTutorial ? 'Hide guide' : 'How to use'}
+            </Button>
+            <Button
+              variant="outline"
               size="icon-lg"
               aria-label="Reset all assumptions"
               title="Reset all assumptions"
-              onClick={() => setOrganizations(freshDefaults())}
+              onClick={resetOrganizations}
               className="size-11 rounded-xl bg-white/70"
             >
               <RotateCcw aria-hidden="true" />
             </Button>
           </div>
         </header>
+
+        {showTutorial ? (
+          <TutorialPanel onRunExample={runTutorialExample} onReset={resetOrganizations} />
+        ) : null}
 
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(370px,0.8fr)]">
           <section aria-labelledby="assumptions-title">
