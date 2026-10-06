@@ -4,7 +4,9 @@ import type { AllocationResult } from '@/allocation/types';
 
 import {
   currency,
+  DEFAULT_EVALUATORS,
   DEFAULT_ORGANIZATIONS,
+  type EvaluatorViewModel,
   type OrganizationViewModel,
 } from './scenario';
 
@@ -12,6 +14,7 @@ interface ExplanationPanelProps {
   result: AllocationResult;
   baseline: AllocationResult;
   organizations: OrganizationViewModel[];
+  evaluators: EvaluatorViewModel[];
 }
 
 function describeParameterChanges(
@@ -22,7 +25,7 @@ function describeParameterChanges(
 
   if (organization.weight !== baseline.weight) {
     changes.push(
-      `${organization.weight > baseline.weight ? 'more' : 'less'} evaluator weight ${
+      `a ${organization.weight > baseline.weight ? 'higher' : 'lower'} combined evaluator score that ${
         organization.weight > baseline.weight ? 'lifts' : 'lowers'
       } its whole curve`,
     );
@@ -49,6 +52,7 @@ export function ExplanationPanel({
   result,
   baseline,
   organizations,
+  evaluators,
 }: ExplanationPanelProps) {
   const changedOrganizations = organizations
     .map((organization, index) => {
@@ -66,7 +70,24 @@ export function ExplanationPanel({
     .filter(({ parameterChanges }) => parameterChanges.length > 0)
     .sort((a, b) => Math.abs(b.allocationDelta) - Math.abs(a.allocationDelta));
 
-  const isBaseline = changedOrganizations.length === 0;
+  const influenceShift = evaluators
+    .map((evaluator, index) => ({
+      evaluator,
+      delta: evaluator.influence - DEFAULT_EVALUATORS[index].influence,
+    }))
+    .sort((a, b) => b.delta - a.delta)[0];
+  const evaluatorSettingsChanged = evaluators.some((evaluator, index) => {
+    const original = DEFAULT_EVALUATORS[index];
+    return (
+      evaluator.influence !== original.influence ||
+      Object.keys(evaluator.organizationScores).some(
+        (organizationId) =>
+          evaluator.organizationScores[organizationId] !==
+          original.organizationScores[organizationId],
+      )
+    );
+  });
+  const isBaseline = changedOrganizations.length === 0 && !evaluatorSettingsChanged;
   const strongestStart = organizations.reduce((strongest, organization) =>
     organization.weight * organization.initialMarginalUtility >
     strongest.weight * strongest.initialMarginalUtility
@@ -101,6 +122,15 @@ export function ExplanationPanel({
         </p>
       ) : (
         <div className="mt-4 grid gap-3">
+          {influenceShift.delta > 0 ? (
+            <p className="rounded-xl border border-blue-900/10 bg-blue-50/70 p-3.5 text-xs leading-5 text-slate-600">
+              <strong className="font-semibold text-slate-900">
+                {influenceShift.evaluator.name} now has{' '}
+                {(influenceShift.evaluator.influence * 100).toFixed(0)}% influence.
+              </strong>{' '}
+              Their organization scores now contribute more to each combined score.
+            </p>
+          ) : null}
           {changedOrganizations.slice(0, 2).map(
             ({ organization, parameterChanges, allocationDelta }) => (
               <div

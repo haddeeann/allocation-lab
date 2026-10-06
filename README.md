@@ -1,7 +1,7 @@
 # Allocation Lab
 
-An interactive mini S-Process explorer for understanding how evaluator
-preferences, starting impact, and diminishing returns change a recommended
+An interactive mini S-Process explorer for understanding how multiple
+evaluators, starting impact, and diminishing returns change a recommended
 funding allocation.
 
 ![Allocation Lab social preview](public/og.png)
@@ -11,8 +11,9 @@ funding allocation.
 - A deterministic continuous optimizer, kept independent of React.
 - Live allocation of a fixed $1 million budget across three illustrative
   organizations.
-- Direct manipulation of evaluator weight, starting marginal utility, and
-  diminishing returns.
+- Two evaluator profiles with adjustable relative influence and
+  organization-specific scores.
+- Direct manipulation of starting marginal utility and diminishing returns.
 - Explanations that compare the current recommendation with a known baseline.
 - Utility-curve visualization with the recommended allocations marked.
 - Invariant-focused unit tests and browser tests for the critical user flows.
@@ -22,14 +23,21 @@ decision-modeling demonstration, not a real grant recommendation.
 
 ## Mathematical model
 
-For organization `i`, funding `xᵢ` produces weighted utility
+The model first combines evaluator scores into an influence-weighted score:
 
 ```text
-Uᵢ(xᵢ) = wᵢ mᵢ log(1 + dᵢ xᵢ / S) / dᵢ
+w̄ᵢ = Σₑ αₑ sₑᵢ / Σₑ αₑ
 ```
 
-where `wᵢ` is evaluator weight, `mᵢ` is initial marginal utility, `dᵢ > 0`
-controls diminishing returns, and `S = $1,000,000` is a scaling constant.
+For organization `i`, funding `xᵢ` then produces utility
+
+```text
+Uᵢ(xᵢ) = w̄ᵢ mᵢ log(1 + dᵢ xᵢ / S) / dᵢ
+```
+
+where `αₑ` is evaluator influence, `sₑᵢ` is that evaluator's score for the
+organization, `mᵢ` is initial marginal utility, `dᵢ > 0` controls diminishing
+returns, and `S = $1,000,000` is a scaling constant.
 
 The objective is to maximize `Σ Uᵢ(xᵢ)` subject to a complete, non-negative
 allocation of the budget. Because every curve is concave, funded organizations
@@ -42,6 +50,7 @@ edge-case behavior.
 
 ```text
 allocation/
+  evaluators.ts         evaluator-preference aggregation
   optimize.ts           budget-constrained optimizer
   utility.ts            utility and marginal-utility functions
   types.ts              framework-independent contracts
@@ -49,6 +58,7 @@ allocation/
 
 components/explorer/
   organization-editor.tsx
+  evaluator-mix.tsx
   allocation-results.tsx
   utility-chart.tsx
   explanation-panel.tsx
@@ -70,7 +80,7 @@ npm install
 npm run dev
 ```
 
-Then open `http://localhost:3000`.
+Then open the local URL printed by Vite (normally `http://localhost:5173`).
 
 ## Quality checks
 
@@ -84,7 +94,9 @@ npm run build
 The unit suite covers budget conservation, non-negativity, determinism, zero
 budget, equal curves, zero-value curves, extreme preferences, equalized final
 marginals, invalid parameters, and allocation monotonicity when starting utility
-increases. Playwright verifies live preference changes, baseline reset, and the
+increases. The evaluator suite checks weighted aggregation, influence extremes,
+invalid profiles, and the resulting allocation direction. Playwright verifies
+live preference changes, baseline reset, the guided evaluator example, and the
 complete analytical result.
 
 ## Product and engineering choices
@@ -109,9 +121,9 @@ does not accept glob patterns or untrusted build input.
 
 ## Natural next steps
 
-1. Add multiple evaluators with adjustable relative influence.
-2. Support saved/shareable scenarios through URL-safe state.
-3. Compare social-welfare aggregation rules side by side.
+1. Support saved/shareable scenarios through URL-safe state.
+2. Compare social-welfare aggregation rules side by side.
+3. Add evaluator names and profiles dynamically.
 4. Add property-based tests over randomly generated valid utility curves.
 
 Those extensions are deliberately outside this MVP until the central model and

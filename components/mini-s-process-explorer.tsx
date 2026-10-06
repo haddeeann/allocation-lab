@@ -5,13 +5,16 @@ import { BookOpenCheck, RotateCcw, Sigma, Sparkles } from 'lucide-react';
 
 import { optimizeAllocation } from '@/allocation/optimize';
 import { AllocationResults } from '@/components/explorer/allocation-results';
+import { EvaluatorMix } from '@/components/explorer/evaluator-mix';
 import { ExplanationPanel } from '@/components/explorer/explanation-panel';
 import { OrganizationEditor } from '@/components/explorer/organization-editor';
 import {
   BUDGET,
   currency,
+  freshEvaluatorDefaults,
+  freshOrganizationDefaults,
+  resolveOrganizations,
   DEFAULT_ORGANIZATIONS,
-  type OrganizationViewModel,
 } from '@/components/explorer/scenario';
 import { UtilityChart } from '@/components/explorer/utility-chart';
 import { TutorialPanel } from '@/components/explorer/tutorial-panel';
@@ -19,42 +22,72 @@ import { Button } from '@/components/ui/button';
 
 const BASELINE_RESULT = optimizeAllocation(DEFAULT_ORGANIZATIONS, BUDGET);
 
-type EditableField =
-  | 'weight'
-  | 'initialMarginalUtility'
-  | 'diminishingReturns';
-
-function freshDefaults(): OrganizationViewModel[] {
-  return DEFAULT_ORGANIZATIONS.map((organization) => ({ ...organization }));
-}
+type EditableField = 'initialMarginalUtility' | 'diminishingReturns';
 
 export function MiniSProcessExplorer() {
-  const [organizations, setOrganizations] = useState(freshDefaults);
-  const [showTutorial, setShowTutorial] = useState(true);
+  const [organizationScenarios, setOrganizationScenarios] = useState(
+    freshOrganizationDefaults,
+  );
+  const [evaluators, setEvaluators] = useState(freshEvaluatorDefaults);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const organizations = useMemo(
+    () => resolveOrganizations(organizationScenarios, evaluators),
+    [organizationScenarios, evaluators],
+  );
   const result = useMemo(
     () => optimizeAllocation(organizations, BUDGET),
     [organizations],
   );
 
   function updateOrganization(id: string, field: EditableField, value: number) {
-    setOrganizations((current) =>
+    setOrganizationScenarios((current) =>
       current.map((organization) =>
         organization.id === id ? { ...organization, [field]: value } : organization,
       ),
     );
   }
 
+  function updateEvaluatorScore(
+    evaluatorId: string,
+    organizationId: string,
+    value: number,
+  ) {
+    setEvaluators((current) =>
+      current.map((evaluator) =>
+        evaluator.id === evaluatorId
+          ? {
+              ...evaluator,
+              organizationScores: {
+                ...evaluator.organizationScores,
+                [organizationId]: value,
+              },
+            }
+          : evaluator,
+      ),
+    );
+  }
+
+  function updateAliceInfluence(percentage: number) {
+    setEvaluators((current) =>
+      current.map((evaluator) => ({
+        ...evaluator,
+        influence: evaluator.id === 'alice' ? percentage / 100 : 1 - percentage / 100,
+      })),
+    );
+  }
+
   function resetOrganizations() {
-    setOrganizations(freshDefaults());
+    setOrganizationScenarios(freshOrganizationDefaults());
+    setEvaluators(freshEvaluatorDefaults());
   }
 
   function runTutorialExample() {
-    setOrganizations(
-      freshDefaults().map((organization) =>
-        organization.id === 'commonfield'
-          ? { ...organization, weight: 1.6 }
-          : organization,
-      ),
+    setOrganizationScenarios(freshOrganizationDefaults());
+    setEvaluators(
+      freshEvaluatorDefaults().map((evaluator) => ({
+        ...evaluator,
+        influence: evaluator.id === 'bob' ? 0.8 : 0.2,
+      })),
     );
   }
 
@@ -71,8 +104,8 @@ export function MiniSProcessExplorer() {
               Allocate for the greatest combined value.
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-[15px]">
-              Adjust the evaluator’s assumptions. The model continuously redistributes a
-              $1 million budget toward the strongest remaining marginal impact.
+              Combine two evaluators’ judgments, adjust the funding assumptions, and see
+              how a $1 million portfolio follows the strongest remaining marginal impact.
             </p>
           </div>
 
@@ -112,15 +145,20 @@ export function MiniSProcessExplorer() {
           <TutorialPanel onRunExample={runTutorialExample} onReset={resetOrganizations} />
         ) : null}
 
+        <EvaluatorMix
+          evaluators={evaluators}
+          onAliceShareChange={updateAliceInfluence}
+        />
+
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(370px,0.8fr)]">
           <section aria-labelledby="assumptions-title">
             <div className="mb-3 flex items-end justify-between">
               <div>
                 <h2 id="assumptions-title" className="text-sm font-semibold text-slate-950">
-                  Evaluator assumptions
+                  Organization assumptions
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">
-                  Change a setting to reshape an organization’s weighted utility curve.
+                  Compare evaluator scores, then shape how each funding opportunity behaves.
                 </p>
               </div>
               <span className="hidden items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-700 sm:flex">
@@ -134,8 +172,12 @@ export function MiniSProcessExplorer() {
                 <OrganizationEditor
                   key={organization.id}
                   organization={organization}
+                  evaluators={evaluators}
                   onChange={(field, value) =>
                     updateOrganization(organization.id, field, value)
+                  }
+                  onEvaluatorScoreChange={(evaluatorId, value) =>
+                    updateEvaluatorScore(evaluatorId, organization.id, value)
                   }
                 />
               ))}
@@ -155,6 +197,7 @@ export function MiniSProcessExplorer() {
             result={result}
             baseline={BASELINE_RESULT}
             organizations={organizations}
+            evaluators={evaluators}
           />
         </div>
 
@@ -166,15 +209,20 @@ export function MiniSProcessExplorer() {
             <div>
               <h2 className="text-sm font-semibold text-slate-900">How the model works</h2>
               <p className="mt-1 max-w-4xl text-xs leading-5 text-slate-500">
-                Each organization uses a weighted logarithmic utility curve. The optimizer
-                chooses non-negative allocations that sum to the budget and equalizes
-                marginal utility across every funded organization.
+                The model first combines evaluator scores using their influence shares.
+                Each resulting score scales a logarithmic utility curve, and the optimizer
+                equalizes marginal utility across every funded organization.
               </p>
             </div>
           </div>
-          <code className="rounded-lg border border-slate-900/10 bg-white/70 px-3 py-2 font-mono text-[11px] text-slate-600">
-            U(x) = w · m · log(1 + d · x / $1m) / d
-          </code>
+          <div className="grid gap-1.5">
+            <code className="rounded-lg border border-slate-900/10 bg-white/70 px-3 py-2 font-mono text-[11px] text-slate-600">
+              w̄ᵢ = Σ influenceₑ · scoreₑᵢ
+            </code>
+            <code className="rounded-lg border border-slate-900/10 bg-white/70 px-3 py-2 font-mono text-[11px] text-slate-600">
+              Uᵢ(x) = w̄ᵢ · mᵢ · log(1 + dᵢ · x / $1m) / dᵢ
+            </code>
+          </div>
         </section>
 
         <footer className="pb-4 text-[11px] leading-5 text-slate-500">

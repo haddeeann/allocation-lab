@@ -27,23 +27,23 @@ async function setSliderWithKeyboard(
   }).toPass({ timeout: 5_000 });
 }
 
-test('raising an evaluator weight changes the recommendation and explains why', async ({
+test('raising an evaluator score changes the recommendation and explains why', async ({
   page,
 }) => {
   await page.goto('/');
 
   const baseline = await allocationDollars(page, 'harbor');
   const weight = page.getByRole('slider', {
-    name: 'Harbor Health evaluator weight',
+    name: 'Alice score for Harbor Health',
   });
 
-  await setSliderWithKeyboard(weight, 'ArrowUp', '1.3');
+  await setSliderWithKeyboard(weight, 'ArrowUp', '1.6');
 
-  await expect(page.getByText('1.3×')).toBeVisible();
+  await expect(page.getByText('Combined 1.25×')).toBeVisible();
   await expect
     .poll(() => allocationDollars(page, 'harbor'))
     .toBeGreaterThan(baseline);
-  await expect(page.getByText(/more evaluator weight lifts its whole curve/i)).toBeVisible();
+  await expect(page.getByText(/higher combined evaluator score/i)).toBeVisible();
 });
 
 test('reset restores the baseline allocation', async ({ page }) => {
@@ -88,22 +88,25 @@ test('the in-app tour demonstrates how an assumption changes an allocation', asy
   await page.goto('/');
 
   const guide = page.getByRole('region', { name: 'Follow the next best dollar.' });
-  await expect(guide).toBeVisible();
+  await expect(async () => {
+    if (!(await guide.isVisible())) {
+      await page.getByRole('button', { name: 'How to use' }).click();
+    }
+    await expect(guide).toBeVisible({ timeout: 500 });
+  }).toPass({ timeout: 5_000 });
 
   const baseline = await allocationDollars(page, 'commonfield');
-  const commonFieldWeight = page.getByRole('slider', {
-    name: 'Common Field evaluator weight',
-  });
+  const bobInfluence = page.getByTestId('bob-influence');
   await expect(async () => {
-    if ((await commonFieldWeight.getAttribute('aria-valuenow')) !== '1.6') {
+    if ((await bobInfluence.getAttribute('data-percentage')) !== '80') {
       await guide.getByRole('button', { name: 'Try the example' }).click();
     }
-    await expect(commonFieldWeight).toHaveAttribute('aria-valuenow', '1.6', {
+    await expect(bobInfluence).toHaveAttribute('data-percentage', '80', {
       timeout: 500,
     });
   }).toPass({ timeout: 5_000 });
 
-  await expect(page.getByText('1.6×')).toBeVisible();
+  await expect(page.getByText(/Bob now has 80% influence/i)).toBeVisible();
   await expect
     .poll(() => allocationDollars(page, 'commonfield'))
     .toBeGreaterThan(baseline);

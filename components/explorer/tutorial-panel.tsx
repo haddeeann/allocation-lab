@@ -18,15 +18,15 @@ interface TutorialPanelProps {
 const STEPS = [
   {
     icon: SlidersHorizontal,
-    title: 'Change one assumption',
+    title: 'Combine perspectives',
     description:
-      'Weight sets evaluator preference, starting utility values the first dollar, and diminishing returns controls how quickly later dollars lose value.',
+      'Set how much Alice and Bob influence the decision, then compare the score each gives every organization.',
   },
   {
     icon: CircleDollarSign,
-    title: 'Watch dollars move',
+    title: 'Shape the opportunity',
     description:
-      'The recommendation updates instantly. The small +/− labels compare each allocation with the starting scenario.',
+      'Starting utility values the first extra funding; diminishing returns controls how quickly later dollars lose value.',
   },
   {
     icon: ChartNoAxesCombined,
@@ -69,7 +69,7 @@ export function TutorialPanel({ onRunExample, onReset }: TutorialPanelProps) {
             </Button>
           </div>
           <p className="mt-2 text-[11px] leading-4 text-slate-500">
-            Example: doubles Common Field’s evaluator weight.
+            Example: gives Bob 80% influence. Bob scores Common Field more highly.
           </p>
         </div>
 

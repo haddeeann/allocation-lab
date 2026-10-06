@@ -6,6 +6,20 @@ export interface OrganizationInput {
   diminishingReturns: number;
 }
 
+export interface OrganizationCurveInput {
+  id: string;
+  name: string;
+  initialMarginalUtility: number;
+  diminishingReturns: number;
+}
+
+export interface EvaluatorInput {
+  id: string;
+  name: string;
+  influence: number;
+  organizationScores: Record<string, number>;
+}
+
 export interface OrganizationAllocation {
   organizationId: string;
   dollars: number;

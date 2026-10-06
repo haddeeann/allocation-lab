@@ -1,15 +1,28 @@
 # Mathematical model
 
-The explorer treats each organization's funding as a continuous quantity. For
-organization `i`, the weighted utility produced by `xᵢ` dollars is:
+The explorer gives each evaluator `e` an influence `αₑ` and a score `sₑᵢ` for
+organization `i`. It combines those judgments with a normalized weighted mean:
 
 ```text
-Uᵢ(xᵢ) = wᵢ mᵢ log(1 + dᵢ xᵢ / S) / dᵢ
+w̄ᵢ = Σₑ αₑ sₑᵢ / Σₑ αₑ
+```
+
+The influence values are non-negative and at least one must be positive. The UI
+keeps Alice and Bob's influence shares summing to 100%, while the engine accepts
+any equivalent non-negative scale.
+
+The explorer treats each organization's funding as a continuous quantity. For
+organization `i`, the utility produced by `xᵢ` dollars is:
+
+```text
+Uᵢ(xᵢ) = w̄ᵢ mᵢ log(1 + dᵢ xᵢ / S) / dᵢ
 ```
 
 where:
 
-- `wᵢ` is the evaluator weight;
+- `w̄ᵢ` is the combined evaluator score;
+- `αₑ` is evaluator `e`'s relative influence;
+- `sₑᵢ` is evaluator `e`'s score for organization `i`;
 - `mᵢ` is the starting marginal utility before evaluator weighting;
 - `dᵢ > 0` controls how quickly returns diminish; and
 - `S = $1,000,000` is a scaling constant that keeps the displayed parameters
@@ -19,7 +32,7 @@ This curve is increasing and concave. Its weighted marginal utility, measured
 per funding unit, is:
 
 ```text
-Uᵢ′(xᵢ) = wᵢ mᵢ / (1 + dᵢ xᵢ / S)
+Uᵢ′(xᵢ) = w̄ᵢ mᵢ / (1 + dᵢ xᵢ / S)
 ```
 
 The optimizer maximizes `Σ Uᵢ(xᵢ)` subject to `Σ xᵢ = budget` and `xᵢ ≥ 0`.
@@ -28,7 +41,7 @@ At the optimum, every funded organization has the same marginal utility
 `λ`. Rearranging that condition gives:
 
 ```text
-xᵢ / S = max(0, (wᵢ mᵢ / λ - 1) / dᵢ)
+xᵢ / S = max(0, (w̄ᵢ mᵢ / λ - 1) / dᵢ)
 ```
 
 The engine finds `λ` with a deterministic bisection search, then applies a

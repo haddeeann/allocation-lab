@@ -2,12 +2,9 @@ import { type CSSProperties } from 'react';
 
 import { Slider } from '@/components/ui/slider';
 
-import type { OrganizationViewModel } from './scenario';
+import type { EvaluatorViewModel, OrganizationViewModel } from './scenario';
 
-type EditableField =
-  | 'weight'
-  | 'initialMarginalUtility'
-  | 'diminishingReturns';
+type EditableField = 'initialMarginalUtility' | 'diminishingReturns';
 
 interface ParameterSliderProps {
   label: string;
@@ -17,6 +14,7 @@ interface ParameterSliderProps {
   max: number;
   step: number;
   displayValue: string;
+  helpText?: string;
   color: string;
   testId: string;
   onChange: (value: number) => void;
@@ -30,14 +28,22 @@ function ParameterSlider({
   max,
   step,
   displayValue,
+  helpText,
   color,
   testId,
   onChange,
 }: ParameterSliderProps) {
   return (
     <div className="grid gap-2.5">
-      <div className="flex items-baseline justify-between gap-4 text-[13px]">
-        <span className="font-medium text-slate-600">{label}</span>
+      <div className="flex items-start justify-between gap-4 text-[13px]">
+        <span>
+          <span className="block font-medium text-slate-700">{label}</span>
+          {helpText ? (
+            <span className="mt-0.5 block text-[10px] leading-4 text-slate-500">
+              {helpText}
+            </span>
+          ) : null}
+        </span>
         <output
           aria-live="polite"
           className="font-mono text-xs font-semibold text-slate-900"
@@ -57,7 +63,7 @@ function ParameterSlider({
           onChange(typeof nextValue === 'number' ? nextValue : nextValue[0])
         }
         style={{ '--slider-color': color } as CSSProperties}
-        className="py-1 [&_[data-slot=slider-range]]:bg-[var(--slider-color)] [&_[data-slot=slider-thumb]]:size-3.5 [&_[data-slot=slider-thumb]]:border-[var(--slider-color)]"
+        className="[&_[data-slot=slider-range]]:bg-[var(--slider-color)] [&_[data-slot=slider-thumb]]:border-[var(--slider-color)]"
       />
     </div>
   );
@@ -65,12 +71,16 @@ function ParameterSlider({
 
 interface OrganizationEditorProps {
   organization: OrganizationViewModel;
+  evaluators: EvaluatorViewModel[];
   onChange: (field: EditableField, value: number) => void;
+  onEvaluatorScoreChange: (evaluatorId: string, value: number) => void;
 }
 
 export function OrganizationEditor({
   organization,
+  evaluators,
   onChange,
+  onEvaluatorScoreChange,
 }: OrganizationEditorProps) {
   return (
     <article className="relative overflow-hidden rounded-2xl border border-slate-900/10 bg-white/80 p-4 shadow-sm shadow-slate-900/[0.03] backdrop-blur">
@@ -100,20 +110,39 @@ export function OrganizationEditor({
       </div>
 
       <div className="grid gap-5">
-        <ParameterSlider
-          label="Evaluator weight"
-          accessibleLabel={`${organization.name} evaluator weight`}
-          testId={`${organization.id}-weight`}
-          value={organization.weight}
-          min={0.2}
-          max={2}
-          step={0.1}
-          displayValue={`${organization.weight.toFixed(1)}×`}
-          color={organization.color}
-          onChange={(value) => onChange('weight', value)}
-        />
+        <div className="rounded-xl border border-slate-900/10 bg-slate-50/80 p-3">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold text-slate-800">Evaluator scores</p>
+              <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
+                Each person’s preference multiplier for this organization.
+              </p>
+            </div>
+            <span className="shrink-0 rounded-md bg-white px-2 py-1 font-mono text-[10px] font-semibold text-slate-700 ring-1 ring-slate-900/10">
+              Combined {organization.weight.toFixed(2)}×
+            </span>
+          </div>
+          <div className="grid gap-4">
+            {evaluators.map((evaluator) => (
+              <ParameterSlider
+                key={evaluator.id}
+                label={`${evaluator.name}’s score`}
+                accessibleLabel={`${evaluator.name} score for ${organization.name}`}
+                testId={`${organization.id}-${evaluator.id}-score`}
+                value={evaluator.organizationScores[organization.id]}
+                min={0.2}
+                max={2}
+                step={0.1}
+                displayValue={`${evaluator.organizationScores[organization.id].toFixed(1)}×`}
+                color={evaluator.color}
+                onChange={(value) => onEvaluatorScoreChange(evaluator.id, value)}
+              />
+            ))}
+          </div>
+        </div>
         <ParameterSlider
           label="Starting marginal utility"
+          helpText="Base value of the first extra funding, before evaluator scores."
           accessibleLabel={`${organization.name} starting marginal utility`}
           testId={`${organization.id}-marginal`}
           value={organization.initialMarginalUtility}
@@ -126,6 +155,7 @@ export function OrganizationEditor({
         />
         <ParameterSlider
           label="Diminishing returns"
+          helpText="Higher means the value of later dollars fades sooner."
           accessibleLabel={`${organization.name} diminishing returns`}
           testId={`${organization.id}-diminishing`}
           value={organization.diminishingReturns}
