@@ -82,6 +82,17 @@ npm run dev
 
 Then open the local URL printed by Vite (normally `http://localhost:5173`).
 
+For the standalone static build used by Netlify:
+
+```bash
+npm run dev:static
+npm run build:static
+```
+
+The production files are written to `dist-static/`. The included
+`netlify.toml` supplies the matching build command and publish directory, so the
+repository can be imported into Netlify without additional build settings.
+
 ## Quality checks
 
 ```bash
