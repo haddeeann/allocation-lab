@@ -43,7 +43,9 @@ test('raising an evaluator score changes the recommendation and explains why', a
   await expect
     .poll(() => allocationDollars(page, 'harbor'))
     .toBeGreaterThan(baseline);
-  await expect(page.getByText(/higher combined evaluator score/i)).toBeVisible();
+  await expect(
+    page.getByText(/higher combined evaluator score/i),
+  ).toBeVisible();
 });
 
 test('reset restores the baseline allocation', async ({ page }) => {
@@ -60,7 +62,9 @@ test('reset restores the baseline allocation', async ({ page }) => {
     .not.toBe(baseline);
 
   await page.getByRole('button', { name: 'Reset all assumptions' }).click();
-  await expect.poll(() => allocationDollars(page, 'brightpath')).toBeCloseTo(baseline, 6);
+  await expect
+    .poll(() => allocationDollars(page, 'brightpath'))
+    .toBeCloseTo(baseline, 6);
   await expect(page.getByText(/retains value longest/i)).toBeVisible();
 });
 
@@ -74,7 +78,9 @@ test('shows the complete analytical result', async ({ page }) => {
   ).toBeVisible();
 
   const allocations = await Promise.all(
-    ['harbor', 'brightpath', 'commonfield'].map((id) => allocationDollars(page, id)),
+    ['harbor', 'brightpath', 'commonfield'].map((id) =>
+      allocationDollars(page, id),
+    ),
   );
   expect(allocations.reduce((sum, value) => sum + value, 0)).toBeCloseTo(
     1_000_000,
@@ -87,7 +93,9 @@ test('the in-app tour demonstrates how an assumption changes an allocation', asy
 }) => {
   await page.goto('/');
 
-  const guide = page.getByRole('region', { name: 'Follow the next best dollar.' });
+  const guide = page.getByRole('region', {
+    name: 'Follow the next best dollar.',
+  });
   await expect(async () => {
     if (!(await guide.isVisible())) {
       await page.getByRole('button', { name: 'How to use' }).click();
@@ -117,8 +125,42 @@ test('the in-app tour demonstrates how an assumption changes an allocation', asy
   await expect(guide).toBeVisible();
 
   await guide.getByRole('button', { name: 'Restore baseline' }).click();
-  await expect.poll(() => allocationDollars(page, 'commonfield')).toBeCloseTo(
-    baseline,
-    6,
+  await expect
+    .poll(() => allocationDollars(page, 'commonfield'))
+    .toBeCloseTo(baseline, 6);
+});
+
+test('switches between decision scenarios with scenario-specific units and options', async ({
+  page,
+}) => {
+  await page.goto('/team-time');
+
+  await expect(
+    page.getByRole('heading', {
+      name: 'Put the team’s next hour where it matters most.',
+    }),
+  ).toBeVisible();
+  await expect(page.getByText('40 hours', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Improve platform reliability' }),
+  ).toBeVisible();
+
+  const hours = await Promise.all(
+    ['reliability', 'onboarding', 'sharing'].map((id) =>
+      allocationDollars(page, id),
+    ),
   );
+  expect(hours.reduce((sum, value) => sum + value, 0)).toBeCloseTo(40, 8);
+
+  await page.getByRole('link', { name: 'Risk reduction' }).click();
+  await expect(page).toHaveURL(/\/risk-reduction$/);
+  await expect(
+    page.getByRole('heading', {
+      name: 'Invest where the next dollar reduces the most risk.',
+    }),
+  ).toBeVisible();
+  await expect(page.getByText('$500,000', { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Account and access security' }),
+  ).toBeVisible();
 });

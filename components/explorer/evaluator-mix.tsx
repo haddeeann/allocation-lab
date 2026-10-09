@@ -9,17 +9,19 @@ import type { EvaluatorViewModel } from './scenario';
 
 interface EvaluatorMixProps {
   evaluators: EvaluatorViewModel[];
-  onAliceShareChange: (percentage: number) => void;
+  optionNounPlural: string;
+  onFirstEvaluatorShareChange: (percentage: number) => void;
 }
 
 export function EvaluatorMix({
   evaluators,
-  onAliceShareChange,
+  optionNounPlural,
+  onFirstEvaluatorShareChange,
 }: EvaluatorMixProps) {
-  const [alice, bob] = evaluators;
-  const totalInfluence = alice.influence + bob.influence;
-  const alicePercentage = Math.round((alice.influence / totalInfluence) * 100);
-  const bobPercentage = 100 - alicePercentage;
+  const [first, second] = evaluators;
+  const totalInfluence = first.influence + second.influence;
+  const firstPercentage = Math.round((first.influence / totalInfluence) * 100);
+  const secondPercentage = 100 - firstPercentage;
 
   return (
     <section
@@ -40,15 +42,17 @@ export function EvaluatorMix({
           Whose judgment counts?
         </h2>
         <p className="mt-1.5 text-xs leading-5 text-slate-600">
-          A single evaluator weight is now split into two ideas: each person’s influence
-          and the score they give each organization.
+          A single evaluator weight is now split into two ideas: each person’s
+          influence and the score they give each {optionNounPlural.slice(0, -1)}
+          .
         </p>
       </div>
 
       <div className="rounded-xl border border-slate-900/10 bg-slate-50/90 p-4">
         <div className="flex items-center justify-between gap-4">
-          {[alice, bob].map((evaluator) => {
-            const percentage = evaluator.id === alice.id ? alicePercentage : bobPercentage;
+          {[first, second].map((evaluator) => {
+            const percentage =
+              evaluator.id === first.id ? firstPercentage : secondPercentage;
 
             return (
               <div
@@ -60,12 +64,21 @@ export function EvaluatorMix({
                 <span
                   aria-hidden="true"
                   className="grid size-8 place-items-center rounded-full text-xs font-bold"
-                  style={{ backgroundColor: evaluator.tint, color: evaluator.color }}
+                  style={{
+                    backgroundColor: evaluator.tint,
+                    color: evaluator.color,
+                  }}
                 >
                   {evaluator.name.slice(0, 1)}
                 </span>
-                <div className={evaluator.id === bob.id ? 'text-right' : undefined}>
-                  <p className="text-xs font-semibold text-slate-900">{evaluator.name}</p>
+                <div
+                  className={
+                    evaluator.id === second.id ? 'text-right' : undefined
+                  }
+                >
+                  <p className="text-xs font-semibold text-slate-900">
+                    {evaluator.name}
+                  </p>
                   <p
                     className="font-mono text-sm font-bold"
                     style={{ color: evaluator.color }}
@@ -79,32 +92,35 @@ export function EvaluatorMix({
         </div>
 
         <Slider
-          aria-label="Alice evaluator influence"
-          aria-valuetext={`Alice ${alicePercentage}%, Bob ${bobPercentage}%`}
-          thumbAriaLabel="Alice evaluator influence"
+          aria-label={`${first.name} evaluator influence`}
+          aria-valuetext={`${first.name} ${firstPercentage}%, ${second.name} ${secondPercentage}%`}
+          thumbAriaLabel={`${first.name} evaluator influence`}
           min={0}
           max={100}
           step={5}
-          value={[alicePercentage]}
+          value={[firstPercentage]}
           onValueChange={(nextValue) =>
-            onAliceShareChange(
+            onFirstEvaluatorShareChange(
               typeof nextValue === 'number' ? nextValue : nextValue[0],
             )
           }
           style={
             {
-              '--alice-color': alice.color,
-              '--bob-color': bob.color,
+              '--alice-color': first.color,
+              '--bob-color': second.color,
             } as CSSProperties
           }
           className="mt-3 [&_[data-slot=slider-range]]:bg-[var(--alice-color)] [&_[data-slot=slider-thumb]]:border-slate-950 [&_[data-slot=slider-thumb]]:bg-white [&_[data-slot=slider-track]]:bg-[var(--bob-color)]"
         />
 
         <div className="mt-3 flex items-start gap-2 text-[11px] leading-4 text-slate-500">
-          <Scale aria-hidden="true" className="mt-0.5 size-3.5 shrink-0 text-slate-600" />
+          <Scale
+            aria-hidden="true"
+            className="mt-0.5 size-3.5 shrink-0 text-slate-600"
+          />
           <p>
-            Influence determines how much each person’s organization scores count. The
-            two shares always add to 100%.
+            Influence determines how much each person’s scores for the{' '}
+            {optionNounPlural} count. The two shares always add to 100%.
           </p>
         </div>
       </div>

@@ -2,15 +2,15 @@
 
 An interactive mini S-Process explorer for understanding how multiple
 evaluators, starting impact, and diminishing returns change a recommended
-funding allocation.
+allocation across grant funding, team time, and risk reduction.
 
 ![Allocation Lab social preview](public/og.png)
 
 ## What it demonstrates
 
 - A deterministic continuous optimizer, kept independent of React.
-- Live allocation of a fixed $1 million budget across three illustrative
-  organizations.
+- Three focused decision scenarios: a $1 million grant portfolio, 40 weekly
+  team-hours, and a $500,000 risk-mitigation portfolio.
 - Two evaluator profiles with adjustable relative influence and
   organization-specific scores.
 - Direct manipulation of starting marginal utility and diminishing returns.
@@ -29,18 +29,19 @@ The model first combines evaluator scores into an influence-weighted score:
 w̄ᵢ = Σₑ αₑ sₑᵢ / Σₑ αₑ
 ```
 
-For organization `i`, funding `xᵢ` then produces utility
+For option `i`, allocated resource `xᵢ` then produces utility
 
 ```text
 Uᵢ(xᵢ) = w̄ᵢ mᵢ log(1 + dᵢ xᵢ / S) / dᵢ
 ```
 
 where `αₑ` is evaluator influence, `sₑᵢ` is that evaluator's score for the
-organization, `mᵢ` is initial marginal utility, `dᵢ > 0` controls diminishing
-returns, and `S = $1,000,000` is a scaling constant.
+option, `mᵢ` is initial marginal utility, `dᵢ > 0` controls diminishing
+returns, and `S` is the scenario's total available resource. Normalizing by
+the total makes the same model meaningful for both dollars and hours.
 
 The objective is to maximize `Σ Uᵢ(xᵢ)` subject to a complete, non-negative
-allocation of the budget. Because every curve is concave, funded organizations
+allocation of the resource. Because every curve is concave, selected options
 are optimal when their final marginal utilities are equal. The engine solves
 for that shared marginal value with deterministic bisection. See
 [the mathematical model](docs/mathematical-model.md) for the derivation and
@@ -69,7 +70,9 @@ tests/e2e/
 ```
 
 The optimizer has no UI or framework dependencies. React owns only scenario
-state, presentation, and explanation of the result.
+state, presentation, navigation, and explanation of the result. Each scenario
+has a direct route: `/grants`, `/team-time`, and `/risk-reduction`; `/` opens
+the original grant scenario.
 
 ## Run locally
 
@@ -108,12 +111,12 @@ marginals, invalid parameters, and allocation monotonicity when starting utility
 increases. The evaluator suite checks weighted aggregation, influence extremes,
 invalid profiles, and the resulting allocation direction. Playwright verifies
 live preference changes, baseline reset, the guided evaluator example, and the
-complete analytical result.
+complete analytical result, including direct navigation between scenarios.
 
 ## Product and engineering choices
 
-- **Fixed organizations and budget:** this keeps the first version focused on
-  understanding preference sensitivity, not form-building.
+- **Three fixed templates:** each page stays focused on preference sensitivity,
+  rather than turning the first version into a generic form builder.
 - **Continuous allocation:** the model exposes the marginal-utility logic more
   clearly than a coarse dollar-by-dollar simulation.
 - **Automatic recalculation:** every control change produces an immediate answer

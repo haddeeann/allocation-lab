@@ -2,18 +2,24 @@ import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 
 import type { AllocationResult } from '@/allocation/types';
 
-import { currency, type OrganizationViewModel } from './scenario';
+import {
+  formatResource,
+  type OrganizationViewModel,
+  type ScenarioTemplate,
+} from './scenario';
 
 interface AllocationResultsProps {
   result: AllocationResult;
   baseline: AllocationResult;
   organizations: OrganizationViewModel[];
+  template: ScenarioTemplate;
 }
 
 export function AllocationResults({
   result,
   baseline,
   organizations,
+  template,
 }: AllocationResultsProps) {
   return (
     <section
@@ -23,10 +29,13 @@ export function AllocationResults({
       <div className="flex items-start justify-between gap-5">
         <div>
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-300">
-            Recommended portfolio
+            {template.resultEyebrow}
           </p>
-          <h2 id="allocation-title" className="mt-1 text-xl font-semibold tracking-tight">
-            Optimal allocation
+          <h2
+            id="allocation-title"
+            className="mt-1 text-xl font-semibold tracking-tight"
+          >
+            {template.resultTitle}
           </h2>
         </div>
         <div className="text-right">
@@ -59,9 +68,14 @@ export function AllocationResults({
       <div className="mt-5 divide-y divide-white/10">
         {result.allocations.map((allocation, index) => {
           const organization = organizations[index];
-          const delta = allocation.dollars - baseline.allocations[index].dollars;
+          const delta =
+            allocation.dollars - baseline.allocations[index].dollars;
           const unchanged = Math.abs(delta) < 1;
-          const DeltaIcon = unchanged ? Minus : delta > 0 ? ArrowUpRight : ArrowDownRight;
+          const DeltaIcon = unchanged
+            ? Minus
+            : delta > 0
+              ? ArrowUpRight
+              : ArrowDownRight;
 
           return (
             <div
@@ -90,7 +104,7 @@ export function AllocationResults({
                   data-dollars={allocation.dollars}
                   className="font-mono text-base font-semibold tracking-tight"
                 >
-                  {currency.format(allocation.dollars)}
+                  {formatResource(template, allocation.dollars)}
                 </p>
                 <div className="mt-0.5 flex items-center justify-end gap-1 text-xs text-slate-400">
                   <span>{(allocation.share * 100).toFixed(1)}%</span>
@@ -104,8 +118,13 @@ export function AllocationResults({
                           : 'text-amber-300'
                     }
                   >
-                    <DeltaIcon aria-hidden="true" className="mr-0.5 inline size-3" />
-                    {unchanged ? 'baseline' : currency.format(Math.abs(delta))}
+                    <DeltaIcon
+                      aria-hidden="true"
+                      className="mr-0.5 inline size-3"
+                    />
+                    {unchanged
+                      ? 'baseline'
+                      : formatResource(template, Math.abs(delta))}
                   </span>
                 </div>
               </div>
@@ -117,7 +136,7 @@ export function AllocationResults({
       <div className="mt-3 grid grid-cols-2 gap-2 rounded-xl border border-white/10 bg-white/[0.06] p-3 text-xs">
         <div>
           <p className="text-[10px] uppercase tracking-[0.1em] text-slate-500">
-            Portfolio cutoff
+            {template.cutoffLabel}
           </p>
           <p className="mt-1 font-mono font-semibold text-slate-200">
             {result.shadowPrice.toFixed(1)} utility
@@ -125,7 +144,7 @@ export function AllocationResults({
         </div>
         <div className="border-l border-white/10 pl-3">
           <p className="text-[10px] uppercase tracking-[0.1em] text-slate-500">
-            Budget used
+            Resource used
           </p>
           <p className="mt-1 font-mono font-semibold text-slate-200">100.0%</p>
         </div>

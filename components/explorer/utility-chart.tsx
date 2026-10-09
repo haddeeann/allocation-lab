@@ -20,18 +20,23 @@ import {
 } from '@/components/ui/chart';
 
 import {
-  BUDGET,
-  compactCurrency,
-  currency,
+  formatCompactResource,
+  formatResource,
   type OrganizationViewModel,
+  type ScenarioTemplate,
 } from './scenario';
 
 interface UtilityChartProps {
   organizations: OrganizationViewModel[];
   result: AllocationResult;
+  template: ScenarioTemplate;
 }
 
-export function UtilityChart({ organizations, result }: UtilityChartProps) {
+export function UtilityChart({
+  organizations,
+  result,
+  template,
+}: UtilityChartProps) {
   const config = useMemo<ChartConfig>(
     () =>
       Object.fromEntries(
@@ -46,18 +51,18 @@ export function UtilityChart({ organizations, result }: UtilityChartProps) {
   const data = useMemo(
     () =>
       Array.from({ length: 21 }, (_, index) => {
-        const funding = (index / 20) * BUDGET;
+        const funding = (index / 20) * template.budget;
         return {
           funding,
           ...Object.fromEntries(
             organizations.map((organization) => [
               organization.id,
-              utilityAtFunding(organization, funding),
+              utilityAtFunding(organization, funding, template.budget),
             ]),
           ),
         };
       }),
-    [organizations],
+    [organizations, template],
   );
 
   return (
@@ -70,28 +75,36 @@ export function UtilityChart({ organizations, result }: UtilityChartProps) {
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-700">
             Utility curves
           </p>
-          <h2 id="utility-curves-title" className="mt-1 text-lg font-semibold text-slate-950">
-            Value produced as funding grows
+          <h2
+            id="utility-curves-title"
+            className="mt-1 text-lg font-semibold text-slate-950"
+          >
+            {template.chartTitle}
           </h2>
         </div>
         <p className="max-w-md text-xs leading-5 text-slate-500 sm:text-right">
-          Dots mark the recommended allocation. Flatter curves signal stronger diminishing
-          returns.
+          {template.chartDescription}
         </p>
       </div>
 
       <ChartContainer
         config={config}
         className="mt-4 h-[300px] w-full aspect-auto"
-        aria-label="Utility by funding amount for all three organizations"
+        aria-label={`Utility by allocated resource for all three ${template.optionNounPlural}`}
       >
-        <LineChart data={data} margin={{ top: 12, right: 16, bottom: 2, left: 0 }} accessibilityLayer>
+        <LineChart
+          data={data}
+          margin={{ top: 12, right: 16, bottom: 2, left: 0 }}
+          accessibilityLayer
+        >
           <CartesianGrid vertical={false} strokeDasharray="4 6" />
           <XAxis
             dataKey="funding"
             type="number"
-            domain={[0, BUDGET]}
-            tickFormatter={(value: number) => compactCurrency.format(value)}
+            domain={[0, template.budget]}
+            tickFormatter={(value: number) =>
+              formatCompactResource(template, value)
+            }
             tickLine={false}
             axisLine={false}
             tickMargin={10}
@@ -109,12 +122,14 @@ export function UtilityChart({ organizations, result }: UtilityChartProps) {
               <ChartTooltipContent
                 labelFormatter={(_, payload) =>
                   payload?.[0]?.payload?.funding !== undefined
-                    ? `${currency.format(payload[0].payload.funding)} funding`
+                    ? formatResource(template, payload[0].payload.funding)
                     : ''
                 }
                 formatter={(value, name) => (
                   <div className="flex min-w-40 items-center justify-between gap-4">
-                    <span className="text-slate-500">{config[String(name)]?.label}</span>
+                    <span className="text-slate-500">
+                      {config[String(name)]?.label}
+                    </span>
                     <span className="font-mono font-semibold text-slate-900">
                       {Number(value).toFixed(1)}
                     </span>

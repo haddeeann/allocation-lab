@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "lint": "oxlint app allocation components/explorer components/mini-s-process-explorer.tsx components/ui/slider.tsx static-main.tsx vite.config.ts vite.static.config.ts",
+    "lint": "oxlint app allocation components/decision-lab-app.tsx components/explorer components/mini-s-process-explorer.tsx components/ui/slider.tsx static-main.tsx vite.config.ts vite.static.config.ts",
     "format": "oxfmt"
   },
   "dependencies": {

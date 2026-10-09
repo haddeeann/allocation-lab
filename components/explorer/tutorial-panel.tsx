@@ -9,34 +9,40 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import type { ScenarioTemplate } from './scenario';
 
 interface TutorialPanelProps {
   onRunExample: () => void;
   onReset: () => void;
+  template: ScenarioTemplate;
+  exampleEvaluatorName: string;
+  exampleOptionName: string;
 }
 
-const STEPS = [
-  {
-    icon: SlidersHorizontal,
-    title: 'Combine perspectives',
-    description:
-      'Set how much Alice and Bob influence the decision, then compare the score each gives every organization.',
-  },
-  {
-    icon: CircleDollarSign,
-    title: 'Shape the opportunity',
-    description:
-      'Starting utility values the first extra funding; diminishing returns controls how quickly later dollars lose value.',
-  },
-  {
-    icon: ChartNoAxesCombined,
-    title: 'Trace the reason',
-    description:
-      'The chart shows cumulative value. Each dot marks the recommended funding level; the explanation names the assumption driving the change.',
-  },
-] as const;
-
-export function TutorialPanel({ onRunExample, onReset }: TutorialPanelProps) {
+export function TutorialPanel({
+  onRunExample,
+  onReset,
+  template,
+  exampleEvaluatorName,
+  exampleOptionName,
+}: TutorialPanelProps) {
+  const steps = [
+    {
+      icon: SlidersHorizontal,
+      title: 'Combine perspectives',
+      description: `Set how much each evaluator influences the decision, then compare the score each gives every ${template.optionNoun}.`,
+    },
+    {
+      icon: CircleDollarSign,
+      title: 'Shape the opportunity',
+      description: template.tutorialOpportunity,
+    },
+    {
+      icon: ChartNoAxesCombined,
+      title: 'Trace the reason',
+      description: template.tutorialChart,
+    },
+  ] as const;
   return (
     <section
       id="tutorial-guide"
@@ -52,14 +58,16 @@ export function TutorialPanel({ onRunExample, onReset }: TutorialPanelProps) {
             id="tutorial-title"
             className="mt-1.5 text-lg font-semibold tracking-tight text-slate-950"
           >
-            Follow the next best dollar.
+            {template.tutorialTitle}
           </h2>
           <p className="mt-1.5 text-xs leading-5 text-slate-600">
-            The model keeps assigning money wherever the next dollar creates the most
-            weighted value.
+            {template.tutorialIntro}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Button onClick={onRunExample} className="bg-blue-700 hover:bg-blue-800">
+            <Button
+              onClick={onRunExample}
+              className="bg-blue-700 hover:bg-blue-800"
+            >
               Try the example
               <ArrowRight aria-hidden="true" data-icon="inline-end" />
             </Button>
@@ -69,12 +77,13 @@ export function TutorialPanel({ onRunExample, onReset }: TutorialPanelProps) {
             </Button>
           </div>
           <p className="mt-2 text-[11px] leading-4 text-slate-500">
-            Example: gives Bob 80% influence. Bob scores Common Field more highly.
+            Example: gives {exampleEvaluatorName} 80% influence. They score{' '}
+            {exampleOptionName} more highly.
           </p>
         </div>
 
         <ol className="grid gap-3 md:grid-cols-3">
-          {STEPS.map((step, index) => {
+          {steps.map((step, index) => {
             const Icon = step.icon;
 
             return (

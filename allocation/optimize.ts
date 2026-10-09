@@ -14,13 +14,21 @@ const BISECTION_STEPS = 120;
 function assertValidInputs(
   organizations: OrganizationInput[],
   budget: number,
+  fundingScale: number,
 ): void {
   if (!Number.isFinite(budget) || budget < 0) {
     throw new RangeError('Budget must be a finite, non-negative number.');
   }
 
   if (organizations.length === 0 && budget > 0) {
-    throw new RangeError('At least one organization is required for a positive budget.');
+    throw new RangeError(
+      'At least one organization is required for a positive budget.',
+    );
+  }
+  if (!Number.isFinite(fundingScale) || fundingScale <= 0) {
+    throw new RangeError(
+      'Funding scale must be a finite number greater than zero.',
+    );
   }
 
   for (const organization of organizations) {
@@ -31,10 +39,14 @@ function assertValidInputs(
     ];
 
     if (values.some((value) => !Number.isFinite(value))) {
-      throw new RangeError(`All parameters for ${organization.name} must be finite.`);
+      throw new RangeError(
+        `All parameters for ${organization.name} must be finite.`,
+      );
     }
     if (organization.weight < 0 || organization.initialMarginalUtility < 0) {
-      throw new RangeError(`Utility inputs for ${organization.name} cannot be negative.`);
+      throw new RangeError(
+        `Utility inputs for ${organization.name} cannot be negative.`,
+      );
     }
     if (organization.diminishingReturns <= 0) {
       throw new RangeError(
@@ -47,8 +59,9 @@ function assertValidInputs(
 export function optimizeAllocation(
   organizations: OrganizationInput[],
   budget: number,
+  fundingScale = DOLLARS_PER_FUNDING_UNIT,
 ): AllocationResult {
-  assertValidInputs(organizations, budget);
+  assertValidInputs(organizations, budget, fundingScale);
 
   if (budget === 0 || organizations.length === 0) {
     return {
@@ -60,12 +73,16 @@ export function optimizeAllocation(
         dollars: 0,
         share: 0,
         utility: 0,
-        marginalUtility: marginalUtilityAtFunding(organization, 0),
+        marginalUtility: marginalUtilityAtFunding(
+          organization,
+          0,
+          fundingScale,
+        ),
       })),
     };
   }
 
-  const budgetInFundingUnits = budget / DOLLARS_PER_FUNDING_UNIT;
+  const budgetInFundingUnits = budget / fundingScale;
   const startingMarginals = organizations.map(
     (organization) => organization.weight * organization.initialMarginalUtility,
   );
@@ -99,14 +116,17 @@ export function optimizeAllocation(
 
   for (let step = 0; step < BISECTION_STEPS; step += 1) {
     const candidatePrice = (lowerPrice + upperPrice) / 2;
-    const demandedFunding = organizations.reduce((total, organization, index) => {
-      const funding = Math.max(
-        0,
-        (startingMarginals[index] / candidatePrice - 1) /
-          organization.diminishingReturns,
-      );
-      return total + funding;
-    }, 0);
+    const demandedFunding = organizations.reduce(
+      (total, organization, index) => {
+        const funding = Math.max(
+          0,
+          (startingMarginals[index] / candidatePrice - 1) /
+            organization.diminishingReturns,
+        );
+        return total + funding;
+      },
+      0,
+    );
 
     if (demandedFunding > budgetInFundingUnits) {
       lowerPrice = candidatePrice;
@@ -121,7 +141,7 @@ export function optimizeAllocation(
       0,
       ((startingMarginals[index] / shadowPrice - 1) /
         organization.diminishingReturns) *
-        DOLLARS_PER_FUNDING_UNIT,
+        fundingScale,
     ),
   );
 
@@ -137,8 +157,12 @@ export function optimizeAllocation(
       organizationId: organization.id,
       dollars: dollars[index],
       share: dollars[index] / budget,
-      utility: utilityAtFunding(organization, dollars[index]),
-      marginalUtility: marginalUtilityAtFunding(organization, dollars[index]),
+      utility: utilityAtFunding(organization, dollars[index], fundingScale),
+      marginalUtility: marginalUtilityAtFunding(
+        organization,
+        dollars[index],
+        fundingScale,
+      ),
     }),
   );
 
@@ -146,6 +170,9 @@ export function optimizeAllocation(
     budget,
     shadowPrice,
     allocations,
-    totalUtility: allocations.reduce((sum, allocation) => sum + allocation.utility, 0),
+    totalUtility: allocations.reduce(
+      (sum, allocation) => sum + allocation.utility,
+      0,
+    ),
   };
 }

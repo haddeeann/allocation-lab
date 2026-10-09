@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import '@/app/globals.css';
-import { MiniSProcessExplorer } from '@/components/mini-s-process-explorer';
+import { DecisionLabApp } from '@/components/decision-lab-app';
 
 const root = document.getElementById('root');
 
@@ -12,6 +12,6 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <MiniSProcessExplorer />
+    <DecisionLabApp />
   </StrictMode>,
 );

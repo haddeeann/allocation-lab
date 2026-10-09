@@ -3,11 +3,10 @@ import { Equal, Lightbulb, MoveRight } from 'lucide-react';
 import type { AllocationResult } from '@/allocation/types';
 
 import {
-  currency,
-  DEFAULT_EVALUATORS,
-  DEFAULT_ORGANIZATIONS,
+  formatResource,
   type EvaluatorViewModel,
   type OrganizationViewModel,
+  type ScenarioTemplate,
 } from './scenario';
 
 interface ExplanationPanelProps {
@@ -15,13 +14,19 @@ interface ExplanationPanelProps {
   baseline: AllocationResult;
   organizations: OrganizationViewModel[];
   evaluators: EvaluatorViewModel[];
+  baselineOrganizations: OrganizationViewModel[];
+  baselineEvaluators: EvaluatorViewModel[];
+  template: ScenarioTemplate;
 }
 
 function describeParameterChanges(
   organization: OrganizationViewModel,
   baseline: OrganizationViewModel,
+  template: ScenarioTemplate,
 ): string[] {
   const changes: string[] = [];
+  const laterUnits =
+    template.resourceKind === 'hours' ? 'later hours' : 'later dollars';
 
   if (organization.weight !== baseline.weight) {
     changes.push(
@@ -39,8 +44,8 @@ function describeParameterChanges(
     changes.push(
       `${organization.diminishingReturns > baseline.diminishingReturns ? 'faster' : 'slower'} diminishing returns ${
         organization.diminishingReturns > baseline.diminishingReturns
-          ? 'make later dollars less competitive'
-          : 'help later dollars hold their value'
+          ? `make ${laterUnits} less competitive`
+          : `help ${laterUnits} hold their value`
       }`,
     );
   }
@@ -53,18 +58,23 @@ export function ExplanationPanel({
   baseline,
   organizations,
   evaluators,
+  baselineOrganizations,
+  baselineEvaluators,
+  template,
 }: ExplanationPanelProps) {
   const changedOrganizations = organizations
     .map((organization, index) => {
       const parameterChanges = describeParameterChanges(
         organization,
-        DEFAULT_ORGANIZATIONS[index],
+        baselineOrganizations[index],
+        template,
       );
       return {
         organization,
         parameterChanges,
         allocationDelta:
-          result.allocations[index].dollars - baseline.allocations[index].dollars,
+          result.allocations[index].dollars -
+          baseline.allocations[index].dollars,
       };
     })
     .filter(({ parameterChanges }) => parameterChanges.length > 0)
@@ -73,11 +83,11 @@ export function ExplanationPanel({
   const influenceShift = evaluators
     .map((evaluator, index) => ({
       evaluator,
-      delta: evaluator.influence - DEFAULT_EVALUATORS[index].influence,
+      delta: evaluator.influence - baselineEvaluators[index].influence,
     }))
     .sort((a, b) => b.delta - a.delta)[0];
   const evaluatorSettingsChanged = evaluators.some((evaluator, index) => {
-    const original = DEFAULT_EVALUATORS[index];
+    const original = baselineEvaluators[index];
     return (
       evaluator.influence !== original.influence ||
       Object.keys(evaluator.organizationScores).some(
@@ -87,7 +97,8 @@ export function ExplanationPanel({
       )
     );
   });
-  const isBaseline = changedOrganizations.length === 0 && !evaluatorSettingsChanged;
+  const isBaseline =
+    changedOrganizations.length === 0 && !evaluatorSettingsChanged;
   const strongestStart = organizations.reduce((strongest, organization) =>
     organization.weight * organization.initialMarginalUtility >
     strongest.weight * strongest.initialMarginalUtility
@@ -109,16 +120,20 @@ export function ExplanationPanel({
         </p>
       </div>
       <h2 className="mt-2 text-xl font-semibold tracking-tight text-slate-950">
-        The recommendation follows the next best dollar.
+        The recommendation follows the next best unit.
       </h2>
 
       {isBaseline ? (
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          <strong className="font-semibold text-slate-900">{strongestStart.name}</strong>{' '}
+          <strong className="font-semibold text-slate-900">
+            {strongestStart.name}
+          </strong>{' '}
           starts with the strongest weighted case, while{' '}
-          <strong className="font-semibold text-slate-900">{slowestDecay.name}</strong>{' '}
-          retains value longest. The allocation balances that head start against how quickly
-          each curve flattens.
+          <strong className="font-semibold text-slate-900">
+            {slowestDecay.name}
+          </strong>{' '}
+          retains value longest. The allocation balances that head start against
+          how quickly each curve flattens.
         </p>
       ) : (
         <div className="mt-4 grid gap-3">
@@ -126,13 +141,16 @@ export function ExplanationPanel({
             <p className="rounded-xl border border-blue-900/10 bg-blue-50/70 p-3.5 text-xs leading-5 text-slate-600">
               <strong className="font-semibold text-slate-900">
                 {influenceShift.evaluator.name} now has{' '}
-                {(influenceShift.evaluator.influence * 100).toFixed(0)}% influence.
+                {(influenceShift.evaluator.influence * 100).toFixed(0)}%
+                influence.
               </strong>{' '}
-              Their organization scores now contribute more to each combined score.
+              Their {template.optionNoun} scores now contribute more to each
+              combined score.
             </p>
           ) : null}
-          {changedOrganizations.slice(0, 2).map(
-            ({ organization, parameterChanges, allocationDelta }) => (
+          {changedOrganizations
+            .slice(0, 2)
+            .map(({ organization, parameterChanges, allocationDelta }) => (
               <div
                 key={organization.id}
                 className="rounded-xl border border-slate-900/8 bg-white p-3.5"
@@ -146,27 +164,33 @@ export function ExplanationPanel({
                     style={{ color: organization.color }}
                   >
                     {allocationDelta >= 0 ? '+' : '−'}
-                    {currency.format(Math.abs(allocationDelta))}
+                    {formatResource(template, Math.abs(allocationDelta))}
                   </span>
                 </div>
                 <p className="mt-1.5 text-xs leading-5 text-slate-600">
-                  You set {parameterChanges.join(' and ')}. Together, those assumptions make
-                  this organization’s next dollars{' '}
-                  {allocationDelta >= 0 ? 'more' : 'less'} competitive than at baseline.
+                  You set {parameterChanges.join(' and ')}. Together, those
+                  assumptions make this {template.optionNoun}’s next{' '}
+                  {template.resourceKind === 'hours' ? 'hours' : 'dollars'}{' '}
+                  {allocationDelta >= 0 ? 'more' : 'less'} competitive than at
+                  baseline.
                 </p>
               </div>
-            ),
-          )}
+            ))}
         </div>
       )}
 
       <div className="mt-5 flex items-center gap-3 rounded-xl bg-slate-950 px-4 py-3 text-xs text-slate-300">
         <Equal aria-hidden="true" className="size-4 shrink-0 text-blue-300" />
         <span>
-          Funded organizations converge on a marginal value of{' '}
-          <strong className="font-mono text-white">{result.shadowPrice.toFixed(1)}</strong>
+          Selected {template.optionNounPlural} converge on a marginal value of{' '}
+          <strong className="font-mono text-white">
+            {result.shadowPrice.toFixed(1)}
+          </strong>
         </span>
-        <MoveRight aria-hidden="true" className="ml-auto hidden size-4 shrink-0 sm:block" />
+        <MoveRight
+          aria-hidden="true"
+          className="ml-auto hidden size-4 shrink-0 sm:block"
+        />
       </div>
     </aside>
   );

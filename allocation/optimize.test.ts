@@ -38,9 +38,9 @@ describe('optimizeAllocation', () => {
     );
 
     expect(total).toBeCloseTo(BUDGET, 8);
-    expect(result.allocations.every((allocation) => allocation.dollars >= 0)).toBe(
-      true,
-    );
+    expect(
+      result.allocations.every((allocation) => allocation.dollars >= 0),
+    ).toBe(true);
   });
 
   it('is deterministic', () => {
@@ -72,6 +72,23 @@ describe('optimizeAllocation', () => {
     }
   });
 
+  it('supports non-currency resources with a custom scale', () => {
+    const identical = organizations.map((organization) => ({
+      ...organization,
+      weight: 1,
+      initialMarginalUtility: 100,
+      diminishingReturns: 2,
+    }));
+    const result = optimizeAllocation(identical, 40, 40);
+
+    for (const allocation of result.allocations) {
+      expect(allocation.dollars).toBeCloseTo(40 / 3, 10);
+    }
+    expect(
+      result.allocations.reduce((sum, item) => sum + item.dollars, 0),
+    ).toBeCloseTo(40, 10);
+  });
+
   it('uses a deterministic equal split when every utility is zero', () => {
     const noValue = organizations.map((organization) => ({
       ...organization,
@@ -86,13 +103,17 @@ describe('optimizeAllocation', () => {
   });
 
   it('does not reduce an organization allocation when its starting utility rises', () => {
-    const baseline = optimizeAllocation(organizations, BUDGET).allocations[0].dollars;
+    const baseline = optimizeAllocation(organizations, BUDGET).allocations[0]
+      .dollars;
 
     for (const initialMarginalUtility of [100, 120, 150, 220]) {
       const changed = organizations.map((organization, index) =>
-        index === 0 ? { ...organization, initialMarginalUtility } : organization,
+        index === 0
+          ? { ...organization, initialMarginalUtility }
+          : organization,
       );
-      const allocation = optimizeAllocation(changed, BUDGET).allocations[0].dollars;
+      const allocation = optimizeAllocation(changed, BUDGET).allocations[0]
+        .dollars;
 
       expect(allocation).toBeGreaterThanOrEqual(baseline);
     }
@@ -113,7 +134,9 @@ describe('optimizeAllocation', () => {
 
   it('equalizes marginal utility across funded organizations', () => {
     const result = optimizeAllocation(organizations, BUDGET);
-    const funded = result.allocations.filter((allocation) => allocation.dollars > 0);
+    const funded = result.allocations.filter(
+      (allocation) => allocation.dollars > 0,
+    );
 
     for (const allocation of funded) {
       expect(allocation.marginalUtility).toBeCloseTo(result.shadowPrice, 10);

@@ -2,7 +2,11 @@ import { type CSSProperties } from 'react';
 
 import { Slider } from '@/components/ui/slider';
 
-import type { EvaluatorViewModel, OrganizationViewModel } from './scenario';
+import type {
+  EvaluatorViewModel,
+  OrganizationViewModel,
+  ScenarioTemplate,
+} from './scenario';
 
 type EditableField = 'initialMarginalUtility' | 'diminishingReturns';
 
@@ -72,6 +76,7 @@ function ParameterSlider({
 interface OrganizationEditorProps {
   organization: OrganizationViewModel;
   evaluators: EvaluatorViewModel[];
+  template: ScenarioTemplate;
   onChange: (field: EditableField, value: number) => void;
   onEvaluatorScoreChange: (evaluatorId: string, value: number) => void;
 }
@@ -79,6 +84,7 @@ interface OrganizationEditorProps {
 export function OrganizationEditor({
   organization,
   evaluators,
+  template,
   onChange,
   onEvaluatorScoreChange,
 }: OrganizationEditorProps) {
@@ -104,7 +110,9 @@ export function OrganizationEditor({
             {organization.name}
           </h3>
           <p className="text-[11px] text-slate-500">
-            Organization {organization.shortName}
+            {template.optionNoun.charAt(0).toUpperCase() +
+              template.optionNoun.slice(1)}{' '}
+            {organization.shortName}
           </p>
         </div>
       </div>
@@ -113,9 +121,12 @@ export function OrganizationEditor({
         <div className="rounded-xl border border-slate-900/10 bg-slate-50/80 p-3">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold text-slate-800">Evaluator scores</p>
+              <p className="text-xs font-semibold text-slate-800">
+                Evaluator scores
+              </p>
               <p className="mt-0.5 text-[10px] leading-4 text-slate-500">
-                Each person’s preference multiplier for this organization.
+                Each person’s preference multiplier for this{' '}
+                {template.optionNoun}.
               </p>
             </div>
             <span className="shrink-0 rounded-md bg-white px-2 py-1 font-mono text-[10px] font-semibold text-slate-700 ring-1 ring-slate-900/10">
@@ -135,15 +146,17 @@ export function OrganizationEditor({
                 step={0.1}
                 displayValue={`${evaluator.organizationScores[organization.id].toFixed(1)}×`}
                 color={evaluator.color}
-                onChange={(value) => onEvaluatorScoreChange(evaluator.id, value)}
+                onChange={(value) =>
+                  onEvaluatorScoreChange(evaluator.id, value)
+                }
               />
             ))}
           </div>
         </div>
         <ParameterSlider
-          label="Starting marginal utility"
-          helpText="Base value of the first extra funding, before evaluator scores."
-          accessibleLabel={`${organization.name} starting marginal utility`}
+          label={template.startingUtilityLabel}
+          helpText={template.startingUtilityHelp}
+          accessibleLabel={`${organization.name} ${template.startingUtilityLabel.toLowerCase()}`}
           testId={`${organization.id}-marginal`}
           value={organization.initialMarginalUtility}
           min={20}
@@ -155,7 +168,7 @@ export function OrganizationEditor({
         />
         <ParameterSlider
           label="Diminishing returns"
-          helpText="Higher means the value of later dollars fades sooner."
+          helpText={template.diminishingReturnsHelp}
           accessibleLabel={`${organization.name} diminishing returns`}
           testId={`${organization.id}-diminishing`}
           value={organization.diminishingReturns}
