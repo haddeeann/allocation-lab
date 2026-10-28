@@ -1,13 +1,20 @@
 # Allocation Lab
 
-An interactive mini S-Process explorer for understanding how multiple
-evaluators, starting impact, and diminishing returns change a recommended
-allocation across grant funding, team time, and risk reduction.
+A decision workbench for examining the same difficult choice through several
+mathematical and strategic lenses. It includes the original Mini S-Process
+Explorer as a method demonstration for grant funding, team time, and risk
+reduction.
 
 ![Allocation Lab social preview](public/og.png)
 
 ## What it demonstrates
 
+- An editable workbench with templates for buy/build/borrow, future-direction,
+  and blank decisions.
+- Four deliberately separate lenses: weighted tradeoff fit, scenario robustness
+  and regret, option preservation, and value of information.
+- Visible disagreement between methods instead of a false master score.
+- Browser-local draft persistence without accounts or a backend.
 - A deterministic continuous optimizer, kept independent of React.
 - Three focused decision scenarios: a $1 million grant portfolio, 40 weekly
   team-hours, and a $500,000 risk-mitigation portfolio.
@@ -18,16 +25,16 @@ allocation across grant funding, team time, and risk reduction.
 - Utility-curve visualization with the recommended allocations marked.
 - Invariant-focused unit tests and browser tests for the critical user flows.
 
-The organizations and utility values are fictional. The application is a small
-decision-modeling demonstration, not a real grant recommendation.
+The template values, organizations, and utility values are illustrative. The
+application exposes structured judgments; it does not make decisions for the
+user or produce objective forecasts.
 
 ## Product direction
 
-The finished Explorer is also the method demonstration for a new personal
-decision-support direction: helping a solopreneur decide how to allocate limited
-time among competing projects. The new workflow will be developed through small
-feedback cycles using real decisions rather than by expanding the demonstration
-with more generic scenarios.
+The Decision Workbench is now the primary product surface. The S-Process
+Explorer remains available as a focused method demonstration. Product
+development proceeds through small, usable prototypes and feedback rather than
+roadmap-only planning.
 
 - [Product roadmap](docs/ROADMAP.md)
 - [Feedback process and learning log](docs/FEEDBACK.md)
@@ -62,6 +69,11 @@ edge-case behavior.
 ## Architecture
 
 ```text
+decision/
+  analyze.ts           independent multi-lens decision analysis
+  types.ts             framework-independent workbench contracts
+  analyze.test.ts      lens separation, determinism, and validation
+
 allocation/
   evaluators.ts         evaluator-preference aggregation
   optimize.ts           budget-constrained optimizer
@@ -77,14 +89,18 @@ components/explorer/
   explanation-panel.tsx
   scenario.ts
 
+components/
+  decision-workbench.tsx
+  lab-nav.tsx
+
 tests/e2e/
   explorer.spec.ts      interaction, reset, and result-completeness flows
 ```
 
-The optimizer has no UI or framework dependencies. React owns only scenario
-state, presentation, navigation, and explanation of the result. Each scenario
-has a direct route: `/grants`, `/team-time`, and `/risk-reduction`; `/` opens
-the original grant scenario.
+Both analysis engines have no UI or framework dependencies. React owns state,
+presentation, navigation, and explanation. `/` and `/workbench` open the
+Decision Workbench; the original method scenarios remain at `/grants`,
+`/team-time`, and `/risk-reduction`.
 
 ## Run locally
 
@@ -117,27 +133,33 @@ npm run lint
 npm run build
 ```
 
-The unit suite covers budget conservation, non-negativity, determinism, zero
+The workbench suite checks lens disagreement, tie agreement, determinism, regret,
+and input validation. The allocation suite covers budget conservation,
+non-negativity, determinism, zero
 budget, equal curves, zero-value curves, extreme preferences, equalized final
 marginals, invalid parameters, and allocation monotonicity when starting utility
 increases. The evaluator suite checks weighted aggregation, influence extremes,
 invalid profiles, and the resulting allocation direction. Playwright verifies
-live preference changes, baseline reset, the guided evaluator example, and the
-complete analytical result, including direct navigation between scenarios.
+live preference changes, baseline reset, the guided evaluator example, the
+complete analytical result, and the workbench's templates, local persistence,
+and cross-tool navigation.
 
 ## Product and engineering choices
 
-- **Three fixed templates:** each page stays focused on preference sensitivity,
-  rather than turning the first version into a generic form builder.
+- **Several lenses, no master score:** disagreement can carry more information
+  than an artificially precise winner.
+- **Three workbench options:** the first prototype stays small enough to test;
+  meaningful combinations can be entered as their own option.
+- **Editable templates:** concrete examples reduce blank-page friction without
+  fixing the user's criteria or scenarios.
 - **Continuous allocation:** the model exposes the marginal-utility logic more
   clearly than a coarse dollar-by-dollar simulation.
 - **Automatic recalculation:** every control change produces an immediate answer
   and explanation; a redundant submit step would slow comparison.
 - **Baseline comparison:** dollar deltas and plain-language parameter effects
   make “why did this move?” answerable without reading the formula.
-- **No persistence or accounts:** the MVP contains no sensitive data and does
-  not need a backend. Adding infrastructure would not improve the core
-  demonstration.
+- **Local persistence, no accounts:** the current draft remains in the browser.
+  Adding a backend would not improve the current feedback cycle.
 
 The dependency set was upgraded from the generated scaffold to remediate direct
 React, Vite, Cloudflare, and image-processing advisories. `npm audit` still
@@ -147,8 +169,6 @@ does not accept glob patterns or untrusted build input.
 
 ## Natural next step
 
-The next step is Phase 0 of the [product roadmap](docs/ROADMAP.md): define and
-walk through one real solopreneur planning decision before building the new
-portfolio interface. Saved/shareable scenarios, alternative welfare rules,
-dynamic evaluators, and additional demonstrations remain deferred until real use
-shows that they are needed.
+Use the workbench on a real decision and identify which lens clarifies the
+choice, which repeats another lens, and which produces a misleading conclusion.
+That feedback—not a speculative feature list—determines the next build.
