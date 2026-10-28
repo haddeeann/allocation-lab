@@ -30,7 +30,7 @@ async function setSliderWithKeyboard(
 test('raising an evaluator score changes the recommendation and explains why', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/grants');
 
   const baseline = await allocationDollars(page, 'harbor');
   const weight = page.getByRole('slider', {
@@ -49,7 +49,7 @@ test('raising an evaluator score changes the recommendation and explains why', a
 });
 
 test('reset restores the baseline allocation', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/grants');
 
   const baseline = await allocationDollars(page, 'brightpath');
   const marginalUtility = page.getByRole('slider', {
@@ -69,7 +69,7 @@ test('reset restores the baseline allocation', async ({ page }) => {
 });
 
 test('shows the complete analytical result', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/grants');
 
   await expect(page).toHaveTitle(/Allocation Lab/);
   await expect(page.getByText('$1,000,000')).toBeVisible();
@@ -91,7 +91,7 @@ test('shows the complete analytical result', async ({ page }) => {
 test('the in-app tour demonstrates how an assumption changes an allocation', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/grants');
 
   const guide = page.getByRole('region', {
     name: 'Follow the next best dollar.',
@@ -162,5 +162,48 @@ test('switches between decision scenarios with scenario-specific units and optio
   await expect(page.getByText('$500,000', { exact: true })).toBeVisible();
   await expect(
     page.getByRole('heading', { name: 'Account and access security' }),
+  ).toBeVisible();
+});
+
+test('uses decision templates, compares lenses, and preserves a local draft', async ({
+  page,
+}) => {
+  await page.goto('/');
+
+  await expect(
+    page.getByRole('heading', {
+      name: 'Explore a decision from more than one angle.',
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText('The tools disagree—and that is useful.'),
+  ).toBeVisible();
+
+  await page
+    .getByRole('button', { name: /Choose a future direction/i })
+    .click();
+  await expect(
+    page.locator('input[value="Seriously monetize a project"]'),
+  ).toBeVisible();
+  await expect(
+    page.getByText('The tools currently point in the same direction.'),
+  ).toBeVisible();
+
+  const question = page.getByRole('textbox', {
+    name: 'Decision',
+    exact: true,
+  });
+  await question.fill('Which future deserves a serious experiment?');
+  await page.reload();
+  await expect(question).toHaveValue(
+    'Which future deserves a serious experiment?',
+  );
+
+  await page.getByRole('link', { name: 'Grant funding' }).click();
+  await expect(page).toHaveURL(/\/grants$/);
+  await expect(
+    page.getByRole('heading', {
+      name: 'Allocate for the greatest combined value.',
+    }),
   ).toBeVisible();
 });

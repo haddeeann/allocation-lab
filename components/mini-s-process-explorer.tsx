@@ -15,11 +15,11 @@ import {
   freshOrganizationDefaults,
   resolveOrganizations,
   SCENARIOS,
-  SCENARIO_ORDER,
   type ScenarioId,
 } from '@/components/explorer/scenario';
 import { UtilityChart } from '@/components/explorer/utility-chart';
 import { TutorialPanel } from '@/components/explorer/tutorial-panel';
+import { LabNav } from '@/components/lab-nav';
 import { Button } from '@/components/ui/button';
 
 type EditableField = 'initialMarginalUtility' | 'diminishingReturns';
@@ -124,37 +124,7 @@ export function MiniSProcessExplorer({
   return (
     <main className="min-h-screen px-4 py-5 sm:px-7 lg:px-10 lg:py-8">
       <div className="mx-auto max-w-[1480px]">
-        <nav
-          aria-label="Decision scenarios"
-          className="mb-5 flex w-fit max-w-full gap-1 overflow-x-auto rounded-xl border border-slate-900/10 bg-white/75 p-1 shadow-sm shadow-slate-900/[0.04]"
-        >
-          {SCENARIO_ORDER.map((id) => {
-            const scenario = SCENARIOS[id];
-            const active = id === scenarioId;
-            return (
-              <a
-                key={id}
-                href={scenario.path}
-                aria-current={active ? 'page' : undefined}
-                onClick={
-                  onScenarioChange
-                    ? (event) => {
-                        event.preventDefault();
-                        onScenarioChange(id);
-                      }
-                    : undefined
-                }
-                className={`shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  active
-                    ? 'bg-slate-950 text-white shadow-sm'
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'
-                }`}
-              >
-                {scenario.navLabel}
-              </a>
-            );
-          })}
-        </nav>
+        <LabNav active={scenarioId} onScenarioChange={onScenarioChange} />
         <header className="mb-7 flex flex-col justify-between gap-5 border-b border-slate-900/10 pb-6 sm:flex-row sm:items-end">
           <div className="max-w-3xl">
             <p className="mb-3 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700">

@@ -1,5 +1,5 @@
-import { MiniSProcessExplorer } from '@/components/mini-s-process-explorer';
+import { DecisionWorkbench } from '@/components/decision-workbench';
 
 export default function Home() {
-  return <MiniSProcessExplorer scenarioId="grants" />;
+  return <DecisionWorkbench />;
 }

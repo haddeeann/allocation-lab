@@ -14,13 +14,13 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://allocation-lab.ptothea.chatgpt.site'),
-  title: 'Allocation Lab — Mini S-Process Explorer',
+  title: 'Allocation Lab — Decision Workbench',
   description:
-    'Explore how multiple evaluator perspectives and diminishing returns shape an optimal funding allocation.',
+    'Explore difficult decisions through tradeoffs, scenarios, reversibility, learning, and S-Process-inspired allocation models.',
   openGraph: {
-    title: 'Allocation Lab — Mini S-Process Explorer',
+    title: 'Allocation Lab — Decision Workbench',
     description:
-      'Explore how multiple evaluator perspectives and diminishing returns shape an optimal funding allocation.',
+      'Explore difficult decisions through several mathematical and strategic lenses.',
     type: 'website',
     images: [
       {
@@ -33,9 +33,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Allocation Lab — Mini S-Process Explorer',
+    title: 'Allocation Lab — Decision Workbench',
     description:
-      'Explore how multiple evaluator perspectives and diminishing returns shape an optimal funding allocation.',
+      'Explore difficult decisions through several mathematical and strategic lenses.',
     images: ['https://allocation-lab.ptothea.chatgpt.site/og.png'],
   },
 };

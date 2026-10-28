@@ -21,6 +21,18 @@ allocation across grant funding, team time, and risk reduction.
 The organizations and utility values are fictional. The application is a small
 decision-modeling demonstration, not a real grant recommendation.
 
+## Product direction
+
+The finished Explorer is also the method demonstration for a new personal
+decision-support direction: helping a solopreneur decide how to allocate limited
+time among competing projects. The new workflow will be developed through small
+feedback cycles using real decisions rather than by expanding the demonstration
+with more generic scenarios.
+
+- [Product roadmap](docs/ROADMAP.md)
+- [Feedback process and learning log](docs/FEEDBACK.md)
+- [Phase 0 decision design and worked example](docs/PHASE-0-DECISION-DESIGN.md)
+
 ## Mathematical model
 
 The model first combines evaluator scores into an influence-weighted score:
@@ -133,12 +145,10 @@ reports a transitive `braces` denial-of-service advisory in Vinext's build chain
 there is no patched upstream release at the time of this build. The application
 does not accept glob patterns or untrusted build input.
 
-## Natural next steps
+## Natural next step
 
-1. Support saved/shareable scenarios through URL-safe state.
-2. Compare social-welfare aggregation rules side by side.
-3. Add evaluator names and profiles dynamically.
-4. Add property-based tests over randomly generated valid utility curves.
-
-Those extensions are deliberately outside this MVP until the central model and
-interaction are proven.
+The next step is Phase 0 of the [product roadmap](docs/ROADMAP.md): define and
+walk through one real solopreneur planning decision before building the new
+portfolio interface. Saved/shareable scenarios, alternative welfare rules,
+dynamic evaluators, and additional demonstrations remain deferred until real use
+shows that they are needed.

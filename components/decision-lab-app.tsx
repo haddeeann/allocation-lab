@@ -7,9 +7,13 @@ import {
   scenarioFromPath,
   type ScenarioId,
 } from '@/components/explorer/scenario';
+import { DecisionWorkbench } from '@/components/decision-workbench';
 import { MiniSProcessExplorer } from '@/components/mini-s-process-explorer';
 
 export function DecisionLabApp() {
+  const isWorkbench =
+    window.location.pathname === '/' ||
+    window.location.pathname.startsWith('/workbench');
   const [scenarioId, setScenarioId] = useState<ScenarioId>(() =>
     scenarioFromPath(window.location.pathname),
   );
@@ -25,6 +29,10 @@ export function DecisionLabApp() {
     window.history.pushState({}, '', SCENARIOS[nextScenarioId].path);
     setScenarioId(nextScenarioId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  if (isWorkbench) {
+    return <DecisionWorkbench />;
   }
 
   return (
